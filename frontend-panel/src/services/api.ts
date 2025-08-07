@@ -1,29 +1,25 @@
 import axios from 'axios'
-import type { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
-const api = axios.create({
-  baseURL:
-    import.meta.env.MODE === 'development'
-      ? 'http://localhost:3001/api'
-      : 'https://whatsapp-bot-panel-render-1.onrender.com/api',
-});
+export const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL
+})
 
-api.interceptors.request.use((config: AxiosRequestConfig) => {
-  const token = localStorage.getItem('token');
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// Servicios usando el cliente `api`
 
-api.interceptors.response.use(
-  (response: AxiosResponse) => response,
-  (error: AxiosError) => {
-    console.error('API Error:', error.response?.data || error.message);
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
+export const authService = {
+  login: (data) => api.post('/login', data),
+  logout: () => api.post('/logout')
+}
+
+export const whatsappService = {
+  getQR: () => api.get('/qr'),
+  getStatus: () => api.get('/status'),
+  restart: () => api.post('/restart'),
+  enviarMensaje: (data) => api.post('/enviar-mensaje', data),
+  reenviarMensaje: (data) => api.post('/reenviar-mensaje', data),
+  desconectar: () => api.post('/desconectar')
+}
+
+export const dashboardService = {
+  getEstadisticas: () => api.get('/dashboard')
+}
