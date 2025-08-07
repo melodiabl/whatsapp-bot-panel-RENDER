@@ -11,6 +11,12 @@ let advertenciasActivas = true;
  */
 async function isOwnerOrAdmin(usuario) {
   try {
+    const user = await db('usuarios').where({ username: usuario }).first();
+    return user && (user.rol === 'admin' || user.rol === 'owner');
+  } catch (error) {
+    return false;
+  }
+  try {
     const user = await db.get('SELECT rol FROM usuarios WHERE username = ?', [usuario]);
     return user && (user.rol === 'admin' || user.rol === 'owner');
   } catch (error) {
@@ -22,6 +28,12 @@ async function isOwnerOrAdmin(usuario) {
  * Verificar si un grupo está autorizado
  */
 async function isGroupAuthorized(grupoId) {
+  try {
+    const grupo = await db('grupos_autorizados').where({ jid: grupoId }).first();
+    return !!grupo;
+  } catch (error) {
+    return false;
+  }
   try {
     const grupo = await db.get('SELECT * FROM grupos_autorizados WHERE jid = ?', [grupoId]);
     return !!grupo;
@@ -35,6 +47,14 @@ async function isGroupAuthorized(grupoId) {
  */
 async function isProviderGroup(grupoId) {
   try {
+    const grupo = await db('grupos_autorizados')
+      .where({ jid: grupoId, tipo: 'proveedor' })
+      .first();
+    return !!grupo;
+  } catch (error) {
+    return false;
+  }
+  try {
     const grupo = await db.get('SELECT * FROM grupos_autorizados WHERE jid = ? AND tipo = ?', [grupoId, 'proveedor']);
     return !!grupo;
   } catch (error) {
@@ -46,6 +66,12 @@ async function isProviderGroup(grupoId) {
  * Registrar log de comando
  */
 async function logCommand(tipo, comando, usuario, grupo) {
+  try {
+    const fecha = new Date().toISOString();
+    await db('logs').insert({ tipo, comando, usuario, grupo, fecha });
+  } catch (error) {
+    console.error('Error al registrar log:', error);
+  }
   try {
     const fecha = new Date().toISOString();
     const stmt = await db.prepare(

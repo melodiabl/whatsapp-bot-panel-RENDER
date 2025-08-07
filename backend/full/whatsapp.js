@@ -72,6 +72,12 @@ let connectionStartTime = null;
 async function logCommand(tipo, comando, usuario, grupo) {
   try {
     const fecha = new Date().toISOString();
+    await db('logs').insert({ tipo, comando, usuario, grupo, fecha });
+  } catch (error) {
+    console.error('Error al registrar log:', error);
+  }
+  try {
+    const fecha = new Date().toISOString();
     const stmt = await db.prepare(
       'INSERT INTO logs (tipo, comando, usuario, grupo, fecha) VALUES (?, ?, ?, ?, ?)'
     );
@@ -85,6 +91,13 @@ async function logCommand(tipo, comando, usuario, grupo) {
 // Verificar si un usuario está baneado
 async function isUserBanned(usuario) {
   try {
+    const banned = await db('baneados').where({ usuario }).first();
+    return !!banned;
+  } catch (error) {
+    console.error('Error al verificar usuario baneado:', error);
+    return false;
+  }
+  try {
     const banned = await db.get('SELECT * FROM baneados WHERE usuario = ?', [usuario]);
     return !!banned;
   } catch (error) {
@@ -95,6 +108,13 @@ async function isUserBanned(usuario) {
 
 // Verificar si un grupo está autorizado
 async function isGroupAuthorized(grupoId) {
+  try {
+    const grupo = await db('grupos_autorizados').where({ jid: grupoId }).first();
+    return !!grupo;
+  } catch (error) {
+    console.error('Error al verificar grupo autorizado:', error);
+    return false;
+  }
   try {
     const grupo = await db.get('SELECT * FROM grupos_autorizados WHERE jid = ?', [grupoId]);
     return !!grupo;
