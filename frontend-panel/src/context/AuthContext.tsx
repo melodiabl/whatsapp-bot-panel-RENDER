@@ -37,8 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsAuthenticated(true);
 
           try {
-            const current:User  User = await authService.getCurrentUser ();
-            setUser (currentUser );
+            const current: User = await authService.getCurrentUser (); // Corregido aquí
+            setUser (current);
           } catch (serverError) {
             console.warn('Server verification failed, using cached user data:', serverError);
           }
@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (username: string, password: string) => {
     try {
-      const response: { token: string; user: User } = await authService.login(username, password);
+      const response: { token: string; user: User } = await authService.login({ username, password });
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
       setIsAuthenticated(true);
