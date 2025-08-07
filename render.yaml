@@ -5,7 +5,7 @@ services:
     plan: free
     buildCommand: npm install
     startCommand: node index.js
-    rootDir: backend
+    rootDir: backend  # <--- ¡ESTO ES LO IMPORTANTE!
     envVars:
       - key: NODE_ENV
         value: production
@@ -25,3 +25,4 @@ services:
 databases:
   - name: whatsapp-db
     plan: free
+
