@@ -33,9 +33,10 @@ import {
   Alert,
   AlertIcon,
   Divider,
+  SimpleGrid, // Añadido para mejor layout en el modal
 } from '@chakra-ui/react';
 import { AddIcon, EditIcon, DeleteIcon } from '@chakra-ui/icons';
-import api, { whatsappService } from '../services/api';
+import { api, whatsappService } from '../services/api'; // Importación asegurada
 
 interface Grupo {
   jid: string;
@@ -61,7 +62,7 @@ const GruposPage: React.FC = () => {
   const [gruposDisponibles, setGruposDisponibles] = useState<GrupoDisponible[]>([]);
   const [loadingGrupos, setLoadingGrupos] = useState(false);
   const [selectedGrupo, setSelectedGrupo] = useState<Grupo | null>(null);
-  const [modalMode, setModalMode] = useState<'authorize' | 'addProvider'>('authorize');
+  const [modalMode, setModalMode] = useState<'authorize' | 'addProvider'>('authorize'); // 'authorize' o 'addProvider'
   const [formData, setFormData] = useState({
     jid: '',
     nombre: '',
@@ -81,7 +82,7 @@ const GruposPage: React.FC = () => {
 
   const fetchGrupos = async () => {
     try {
-      const response = await api.get('/grupos');
+      const response = await api.get<Grupo[]>('/grupos'); // Tipado de respuesta
       setGrupos(response.data);
     } catch (error) {
       toast({
@@ -97,7 +98,7 @@ const GruposPage: React.FC = () => {
   const fetchGruposDisponibles = async () => {
     setLoadingGrupos(true);
     try {
-      const grupos = await whatsappService.getAvailableGroups();
+      const grupos = await whatsappService.getAvailableGroups(); // Uso de whatsappService
       setGruposDisponibles(grupos);
     } catch (error) {
       toast({
@@ -114,12 +115,13 @@ const GruposPage: React.FC = () => {
 
   const handleOpenAuthorizeModal = () => {
     setModalMode('authorize');
-    fetchGruposDisponibles();
+    fetchGruposDisponibles(); // Cargar grupos disponibles solo para el modo "authorize"
     onOpen();
   };
 
   const handleOpenProviderModal = () => {
     setModalMode('addProvider');
+    // No es necesario cargar grupos disponibles aquí a menos que se necesite para un select
     onOpen();
   };
 
@@ -134,8 +136,9 @@ const GruposPage: React.FC = () => {
   const handleSubmit = async () => {
     try {
       let dataToSend = { ...formData };
+      // Si estamos añadiendo un proveedor y no es una edición, el tipo por defecto es 'general'
       if (modalMode === 'addProvider' && !selectedGrupo) {
-        dataToSend.tipo = 'general'; // Default type for providers
+        dataToSend.tipo = 'general';
       }
 
       if (selectedGrupo) {
@@ -197,7 +200,8 @@ const GruposPage: React.FC = () => {
 
   const handleEdit = (grupo: Grupo) => {
     setSelectedGrupo(grupo);
-    setModalMode(grupo.proveedor !== 'General' ? 'addProvider' : 'authorize');
+    // Determinar el modo del modal basado en si el grupo tiene un proveedor específico
+    setModalMode(grupo.proveedor && grupo.proveedor !== 'General' ? 'addProvider' : 'authorize');
     setFormData({
       jid: grupo.jid,
       nombre: grupo.nombre,
@@ -355,7 +359,7 @@ const GruposPage: React.FC = () => {
               })}
             </HStack>
           </Box>
-          
+
           {renderGruposTable(gruposProveedor)}
         </>
       ) : (
@@ -464,7 +468,7 @@ const GruposPage: React.FC = () => {
                 )}
               </FormControl>
 
-              {modalMode === 'authorize' && (
+              {modalMode === 'authorize' && ( // Solo mostrar el tipo de grupo si es un grupo general
                 <FormControl isRequired>
                   <FormLabel>Tipo de Grupo</FormLabel>
                   <Select
@@ -563,3 +567,4 @@ const GruposPage: React.FC = () => {
 };
 
 export default GruposPage;
+

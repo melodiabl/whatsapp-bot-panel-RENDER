@@ -29,13 +29,13 @@ import {
   Text,
 } from '@chakra-ui/react';
 import { AddIcon, EditIcon, DeleteIcon } from '@chakra-ui/icons';
-;
+import { api } from '../services/api'; // Importación añadida
 
 interface Votacion {
   id: number;
   titulo: string;
   descripcion: string;
-  opciones: string;
+  opciones: string; // Esto es un string JSON
   fecha_inicio: string;
   fecha_fin: string;
   estado: string;
@@ -54,7 +54,7 @@ const VotacionesPage: React.FC = () => {
   const [formData, setFormData] = useState({
     titulo: '',
     descripcion: '',
-    opciones: ['', ''],
+    opciones: ['', ''], // Array de strings para las opciones
     fecha_fin: '',
     grupo: '',
   });
@@ -68,7 +68,7 @@ const VotacionesPage: React.FC = () => {
 
   const fetchVotaciones = async () => {
     try {
-      const response = await api.get('/votaciones');
+      const response = await api.get<Votacion[]>('/votaciones'); // Tipado de respuesta
       setVotaciones(response.data);
     } catch (error) {
       toast({
@@ -83,7 +83,7 @@ const VotacionesPage: React.FC = () => {
 
   const fetchGrupos = async () => {
     try {
-      const response = await api.get('/grupos');
+      const response = await api.get<Grupo[]>('/grupos'); // Tipado de respuesta
       setGrupos(response.data);
     } catch (error) {
       console.error('Error fetching grupos:', error);
@@ -94,7 +94,7 @@ const VotacionesPage: React.FC = () => {
     try {
       const data = {
         ...formData,
-        opciones: formData.opciones.filter(op => op.trim() !== ''),
+        opciones: formData.opciones.filter(op => op.trim() !== ''), // Filtrar opciones vacías
       };
 
       if (selectedVotacion) {
@@ -156,13 +156,19 @@ const VotacionesPage: React.FC = () => {
 
   const handleEdit = (votacion: Votacion) => {
     setSelectedVotacion(votacion);
-    const opciones = JSON.parse(votacion.opciones || '[]');
+    let opcionesParsed: string[] = [];
+    try {
+      opcionesParsed = JSON.parse(votacion.opciones || '[]');
+    } catch (e) {
+      console.error("Error parsing opciones:", e);
+      opcionesParsed = [];
+    }
     setFormData({
       titulo: votacion.titulo,
       descripcion: votacion.descripcion,
-      opciones: opciones.length > 0 ? opciones : ['', ''],
-      fecha_fin: votacion.fecha_fin.split('T')[0],
-      grupo: '',
+      opciones: opcionesParsed.length > 0 ? opcionesParsed : ['', ''], // Asegurar al menos dos opciones vacías
+      fecha_fin: votacion.fecha_fin.split('T')[0], // Formatear la fecha para el input type="date"
+      grupo: '', // El grupo no se guarda en la interfaz Votacion, se asume que se selecciona al crear/editar
     });
     onOpen();
   };
@@ -190,7 +196,7 @@ const VotacionesPage: React.FC = () => {
     const newOpciones = formData.opciones.filter((_, i) => i !== index);
     setFormData({
       ...formData,
-      opciones: newOpciones.length > 0 ? newOpciones : [''],
+      opciones: newOpciones.length > 0 ? newOpciones : [''], // Asegurar al menos una opción vacía
     });
   };
 
@@ -350,3 +356,4 @@ const VotacionesPage: React.FC = () => {
 };
 
 export default VotacionesPage;
+

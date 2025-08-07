@@ -1,60 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  Text,
-  HStack,
-  Button,
-  useToast,
-  Input,
-  Select,
-  VStack,
+  Box, Button, Table, Thead, Tbody, Tr, Th, Td, Badge,
+  useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader,
+  ModalFooter, ModalBody, ModalCloseButton, FormControl, FormLabel,
+  Textarea, VStack, HStack, IconButton, useToast, Select, Text,
 } from '@chakra-ui/react';
-import { RepeatIcon } from '@chakra-ui/icons';
-import { api } from '../services/api';
+import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
+import { aportesService, api } from '../services/api'; // Importación de api añadida
 
-
-interface Log {
+interface Aporte {
   id: number;
+  contenido: string;
   tipo: string;
-  comando: string;
   usuario: string;
   grupo: string;
   fecha: string;
+  pdf_generado: string;
 }
 
-const LogsPage: React.FC = () => {
-  const [logs, setLogs] = useState<Log[]>([]);
-  const [filteredLogs, setFilteredLogs] = useState<Log[]>([]);
-  const [filters, setFilters] = useState({
-    tipo: '',
-    usuario: '',
-    comando: '',
+interface Grupo {
+  jid: string;
+  nombre: string;
+}
+
+const AportesPage: React.FC = () => {
+  const [aportes, setAportes] = useState<Aporte[]>([]);
+  const [grupos, setGrupos] = useState<Grupo[]>([]);
+  const [formData, setFormData] = useState({
+    contenido: '',
+    tipo: 'texto',
+    grupo: '',
   });
+  const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
 
   useEffect(() => {
-    fetchLogs();
+    fetchAportes();
+    fetchGrupos();
   }, []);
 
-  useEffect(() => {
-    applyFilters();
-  }, [logs, filters]);
-
-  const fetchLogs = async () => {
+  const fetchAportes = async () => {
     try {
-      const response = await api.get('/logs');
-      setLogs(response.data);
+      const response = await aportesService.getAportes();
+      setAportes(response.data);
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'No se pudieron cargar los logs',
+        description: 'No se pudieron cargar los aportes',
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -62,122 +54,171 @@ const LogsPage: React.FC = () => {
     }
   };
 
-  const applyFilters = () => {
-    let filtered = logs;
-
-    if (filters.tipo) {
-      filtered = filtered.filter(log => log.tipo.toLowerCase().includes(filters.tipo.toLowerCase()));
+  const fetchGrupos = async () => {
+    try {
+      const response = await api.get<Grupo[]>('/grupos'); // Uso de api.get
+      setGrupos(response.data);
+    } catch (error) {
+      console.error('Error fetching grupos:', error);
     }
+  };
 
-    if (filters.usuario) {
-      filtered = filtered.filter(log => log.usuario.toLowerCase().includes(filters.usuario.toLowerCase()));
+  const handleSubmit = async () => {
+    try {
+      await aportesService.subirAporte(formData);
+      toast({
+        title: 'Éxito',
+        description: 'Aporte creado correctamente',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      fetchAportes();
+      handleClose();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'No se pudo crear el aporte',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
     }
+  };
 
-    if (filters.comando) {
-      filtered = filtered.filter(log => log.comando.toLowerCase().includes(filters.comando.toLowerCase()));
+  const handleDelete = async (id: number) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este aporte?')) {
+      try {
+        await aportesService.eliminarAporte(id);
+        toast({
+          title: 'Éxito',
+          description: 'Aporte eliminado correctamente',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+        fetchAportes();
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'No se pudo eliminar el aporte',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
     }
+  };
 
-    setFilteredLogs(filtered);
+  const handleClose = () => {
+    setFormData({ contenido: '', tipo: 'texto', grupo: '' });
+    onClose();
   };
 
   const getTipoBadge = (tipo: string) => {
-    const color = tipo === 'comando' ? 'blue' : tipo === 'error' ? 'red' : tipo === 'warning' ? 'yellow' : 'green';
+    const color = tipo === 'imagen' ? 'purple' : tipo === 'video' ? 'orange' : 'blue';
     return <Badge colorScheme={color}>{tipo.toUpperCase()}</Badge>;
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      tipo: '',
-      usuario: '',
-      comando: '',
-    });
   };
 
   return (
     <Box p={6}>
       <HStack justify="space-between" mb={6}>
-        <Text fontSize="2xl" fontWeight="bold">Logs del Sistema</Text>
-        <Button leftIcon={<RepeatIcon />} onClick={fetchLogs}>
-          Actualizar
+        <Text fontSize="2xl" fontWeight="bold">Aportes</Text>
+        <Button leftIcon={<AddIcon />} colorScheme="purple" onClick={onOpen}>
+          Nuevo Aporte
         </Button>
       </HStack>
-
-      {/* Filtros */}
-      <Box mb={6} p={4} borderWidth={1} borderRadius="md">
-        <Text fontSize="lg" fontWeight="semibold" mb={3}>Filtros</Text>
-        <VStack spacing={3}>
-          <HStack spacing={4} width="100%">
-            <Select
-              placeholder="Filtrar por tipo"
-              value={filters.tipo}
-              onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}
-              maxW="200px"
-            >
-              <option value="comando">Comando</option>
-              <option value="error">Error</option>
-              <option value="warning">Warning</option>
-              <option value="info">Info</option>
-            </Select>
-
-            <Input
-              placeholder="Filtrar por usuario"
-              value={filters.usuario}
-              onChange={(e) => setFilters({ ...filters, usuario: e.target.value })}
-              maxW="200px"
-            />
-
-            <Input
-              placeholder="Filtrar por comando"
-              value={filters.comando}
-              onChange={(e) => setFilters({ ...filters, comando: e.target.value })}
-              maxW="200px"
-            />
-
-            <Button onClick={clearFilters} size="sm">
-              Limpiar Filtros
-            </Button>
-          </HStack>
-        </VStack>
-      </Box>
-
-      <Text mb={4} color="gray.600">
-        Mostrando {filteredLogs.length} de {logs.length} logs
-      </Text>
 
       <Table variant="simple">
         <Thead>
           <Tr>
-            <Th>Fecha</Th>
+            <Th>Contenido</Th>
             <Th>Tipo</Th>
-            <Th>Comando</Th>
             <Th>Usuario</Th>
             <Th>Grupo</Th>
+            <Th>Fecha</Th>
+            <Th>Acciones</Th>
           </Tr>
         </Thead>
         <Tbody>
-          {filteredLogs.map((log) => (
-            <Tr key={log.id}>
-              <Td>{new Date(log.fecha).toLocaleString()}</Td>
-              <Td>{getTipoBadge(log.tipo)}</Td>
+          {aportes.map((aporte) => (
+            <Tr key={aporte.id}>
+              <Td maxW="300px" isTruncated>{aporte.contenido}</Td>
+              <Td>{getTipoBadge(aporte.tipo)}</Td>
+              <Td>{aporte.usuario}</Td>
+              <Td>{aporte.grupo}</Td>
+              <Td>{new Date(aporte.fecha).toLocaleDateString()}</Td>
               <Td>
-                <Text fontFamily="mono" fontSize="sm">
-                  {log.comando}
-                </Text>
+                <IconButton
+                  aria-label="Eliminar"
+                  icon={<DeleteIcon />}
+                  size="sm"
+                  colorScheme="red"
+                  onClick={() => handleDelete(aporte.id)}
+                />
               </Td>
-              <Td>{log.usuario}</Td>
-              <Td maxW="200px" isTruncated>{log.grupo}</Td>
             </Tr>
           ))}
         </Tbody>
       </Table>
 
-      {filteredLogs.length === 0 && (
-        <Box textAlign="center" py={10}>
-          <Text color="gray.500">No se encontraron logs con los filtros aplicados</Text>
-        </Box>
-      )}
+      <Modal isOpen={isOpen} onClose={handleClose} size="lg">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Nuevo Aporte</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4}>
+              <FormControl isRequired>
+                <FormLabel>Contenido</FormLabel>
+                <Textarea
+                  value={formData.contenido}
+                  onChange={(e) => setFormData({ ...formData, contenido: e.target.value })}
+                  placeholder="Describe tu aporte..."
+                  rows={4}
+                />
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel>Tipo</FormLabel>
+                <Select
+                  value={formData.tipo}
+                  onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
+                >
+                  <option value="texto">Texto</option>
+                  <option value="imagen">Imagen</option>
+                  <option value="video">Video</option>
+                  <option value="enlace">Enlace</option>
+                  <option value="documento">Documento</option>
+                </Select>
+              </FormControl>
+
+              <FormControl>
+                <FormLabel>Grupo (Opcional)</FormLabel>
+                <Select
+                  value={formData.grupo}
+                  onChange={(e) => setFormData({ ...formData, grupo: e.target.value })}
+                  placeholder="Seleccionar grupo"
+                >
+                  {grupos.map((grupo) => (
+                    <option key={grupo.jid} value={grupo.nombre}>
+                      {grupo.nombre}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={handleClose}>Cancelar</Button>
+            <Button colorScheme="purple" onClick={handleSubmit}>Crear Aporte</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };
 
-export default LogsPage;
+export default AportesPage;
+

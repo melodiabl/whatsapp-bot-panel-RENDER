@@ -36,6 +36,44 @@ interface Usuario {
   rol: string;
 }
 
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Button,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Badge,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  FormControl,
+  FormLabel,
+  Input,
+  VStack,
+  HStack,
+  IconButton,
+  useToast,
+  Select,
+  Text,
+} from '@chakra-ui/react';
+import { AddIcon, EditIcon, DeleteIcon } from '@chakra-ui/icons';
+import { api } from '../services/api'; // Importación añadida
+
+interface Usuario {
+  id: number;
+  username: string;
+  rol: string;
+}
+
 const UsuariosPage: React.FC = () => {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [selectedUsuario, setSelectedUsuario] = useState<Usuario | null>(null);
@@ -53,7 +91,7 @@ const UsuariosPage: React.FC = () => {
 
   const fetchUsuarios = async () => {
     try {
-      const response = await api.get('/usuarios');
+      const response = await api.get<Usuario[]>('/usuarios'); // Tipado de respuesta
       setUsuarios(response.data);
     } catch (error) {
       toast({
@@ -92,7 +130,7 @@ const UsuariosPage: React.FC = () => {
 
       fetchUsuarios();
       handleClose();
-    } catch (error: any) {
+    } catch (error: any) { // Tipado de error
       toast({
         title: 'Error',
         description: error.response?.data?.error || 'No se pudo guardar el usuario',
@@ -131,7 +169,7 @@ const UsuariosPage: React.FC = () => {
     setSelectedUsuario(usuario);
     setFormData({
       username: usuario.username,
-      password: '',
+      password: '', // La contraseña no se carga para edición por seguridad
       rol: usuario.rol,
     });
     onOpen();

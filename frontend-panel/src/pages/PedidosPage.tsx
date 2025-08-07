@@ -28,7 +28,7 @@ import {
   Text,
 } from '@chakra-ui/react';
 import { AddIcon, EditIcon, DeleteIcon } from '@chakra-ui/icons';
-;
+import { api } from '../services/api'; // Importación añadida
 
 interface Pedido {
   id: number;
@@ -62,7 +62,7 @@ const PedidosPage: React.FC = () => {
 
   const fetchPedidos = async () => {
     try {
-      const response = await api.get('/pedidos');
+      const response = await api.get<Pedido[]>('/pedidos'); // Tipado de respuesta
       setPedidos(response.data);
     } catch (error) {
       toast({
@@ -77,7 +77,7 @@ const PedidosPage: React.FC = () => {
 
   const fetchGrupos = async () => {
     try {
-      const response = await api.get('/grupos');
+      const response = await api.get<Grupo[]>('/grupos'); // Tipado de respuesta
       setGrupos(response.data);
     } catch (error) {
       console.error('Error fetching grupos:', error);

@@ -1,4 +1,3 @@
-import { whatsappService } from '../services/api'
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -34,7 +33,7 @@ import {
   AlertIcon,
 } from '@chakra-ui/react';
 import { AddIcon, EditIcon, DeleteIcon, ExternalLinkIcon } from '@chakra-ui/icons';
-import api, { whatsappService } from '../services/api';
+import { api, whatsappService } from '../services/api'; // Importación asegurada
 
 interface Manhwa {
   id: number;
@@ -81,7 +80,7 @@ const ManhwasPage: React.FC = () => {
 
   const fetchManhwas = async () => {
     try {
-      const response = await api.get('/manhwas');
+      const response = await api.get<Manhwa[]>('/manhwas'); // Tipado de respuesta
       setManhwas(response.data);
     } catch (error) {
       toast({
@@ -97,10 +96,17 @@ const ManhwasPage: React.FC = () => {
   const fetchGruposDisponibles = async () => {
     setLoadingGrupos(true);
     try {
-      const grupos = await whatsappService.getAvailableGroups();
+      const grupos = await whatsappService.getAvailableGroups(); // Uso de whatsappService
       setGruposDisponibles(grupos);
     } catch (error) {
       console.error('Error al cargar grupos:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudieron cargar los grupos disponibles del bot.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
     } finally {
       setLoadingGrupos(false);
     }
@@ -374,3 +380,4 @@ const ManhwasPage: React.FC = () => {
 };
 
 export default ManhwasPage;
+

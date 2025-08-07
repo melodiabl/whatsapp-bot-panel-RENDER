@@ -1,4 +1,3 @@
-import { authService } from '../services/api'
 import { useState } from 'react';
 import {
   Box,
@@ -18,6 +17,7 @@ import {
 } from '@chakra-ui/react';
 import { FaWhatsapp } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import { authService } from '../services/api'; // Importación asegurada
 
 export function LoginPage() {
   const [username, setUsername] = useState('');
@@ -39,25 +39,29 @@ export function LoginPage() {
         description: 'Por favor selecciona un tipo de acceso',
         status: 'error',
         duration: 3000,
+        isClosable: true, // Asegurar que sea closable
       });
       return;
     }
 
     setIsLoading(true);
     try {
+      // Asumiendo que `login` de `useAuth` ya maneja la llamada a `authService.login`
       await login(username, password);
       toast({
         title: 'Login exitoso',
         description: `Bienvenido como ${selectedRole}`,
         status: 'success',
         duration: 3000,
+        isClosable: true,
       });
-    } catch (error) {
+    } catch (error: any) { // Tipado de error
       toast({
         title: 'Error de login',
-        description: 'Usuario o contraseña incorrectos',
+        description: error.response?.data?.error || 'Usuario o contraseña incorrectos',
         status: 'error',
         duration: 3000,
+        isClosable: true,
       });
       // Solo limpiar la contraseña, mantener usuario y tipo de acceso
       setPassword('');
@@ -92,13 +96,13 @@ export function LoginPage() {
           </Text>
         </VStack>
 
-        <Box 
-          w="100%" 
-          p={8} 
+        <Box
+          w="100%"
+          p={8}
           bg={bg}
-          borderWidth={1} 
+          borderWidth={1}
           borderColor={borderColor}
-          borderRadius="xl" 
+          borderRadius="xl"
           boxShadow="xl"
         >
           <form onSubmit={handleSubmit}>
@@ -176,3 +180,4 @@ export function LoginPage() {
     </Container>
   );
 }
+

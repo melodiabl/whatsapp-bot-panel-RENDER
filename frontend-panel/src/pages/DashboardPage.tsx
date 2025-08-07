@@ -21,15 +21,15 @@ import {
   Progress,
   Select,
   Circle,
-  SimpleGrid,
+  SimpleGrid, // Añadido
   Card,
   CardBody,
-  CardHeader
+  CardHeader,
+  Spinner, // Añadido
 } from '@chakra-ui/react';
 import { FaWhatsapp, FaUsers, FaComments, FaChartBar, FaPaperPlane, FaInbox } from 'react-icons/fa';
 import { useEffect, useState } from 'react';
-import { api } from '../services/api'; 
-
+import { api } from '../services/api'; // Importación asegurada
 
 interface DashboardStats {
   usuarios: number;
@@ -42,7 +42,7 @@ interface Votacion {
   id: number;
   titulo: string;
   descripcion: string;
-  opciones: string;
+  opciones: string; // Esto es un string JSON
   fecha_inicio: string;
   fecha_fin: string;
   estado: string;
@@ -85,10 +85,10 @@ export function Dashboard() {
     const fetchData = async () => {
       try {
         const [statsRes, votacionesRes, aportesRes, manhwasRes] = await Promise.all([
-          api.get('/dashboard/stats'),
-          api.get('/votaciones'),
-          api.get('/aportes'),
-          api.get('/manhwas')
+          api.get<DashboardStats>('/dashboard/stats'), // Tipado de respuesta
+          api.get<Votacion[]>('/votaciones'), // Tipado de respuesta
+          api.get<Aporte[]>('/aportes'), // Tipado de respuesta
+          api.get<Manhwa[]>('/manhwas') // Tipado de respuesta
         ]);
 
         setStats(statsRes.data);
@@ -97,6 +97,7 @@ export function Dashboard() {
         setManhwas(manhwasRes.data);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        // Podrías añadir un toast aquí si quieres notificar al usuario
       } finally {
         setLoading(false);
       }
@@ -107,8 +108,9 @@ export function Dashboard() {
 
   if (loading) {
     return (
-      <Box p={6} bg={cardBg} minH="100vh">
-        <Text>Cargando...</Text>
+      <Box p={6} bg={cardBg} minH="100vh" display="flex" justifyContent="center" alignItems="center">
+        <Spinner size="xl" />
+        <Text ml={4}>Cargando dashboard...</Text>
       </Box>
     );
   }
@@ -125,16 +127,16 @@ export function Dashboard() {
     <Box p={6} bg={cardBg} minH="100vh">
       <VStack spacing={6} align="stretch">
         {/* Header con iconos */}
-        <Flex justify="space-between" align="center" mb={6}>
-          <HStack spacing={3}>
+        <Flex justify="space-between" align="center" mb={6} flexWrap="wrap"> {/* Añadido flexWrap */}
+          <HStack spacing={3} mb={{ base: 4, md: 0 }}>
             <Icon as={FaWhatsapp} boxSize={8} color="green.500" />
             <Heading size="lg" color="green.500">
               WhatsApp Bot Dashboard
             </Heading>
           </HStack>
-          
+
           {/* Tarjetas de mensajes en la esquina superior derecha */}
-          <HStack spacing={4}>
+          <HStack spacing={4} flexWrap="wrap"> {/* Añadido flexWrap */}
             <Card size="sm" bg={bg} borderColor={borderColor}>
               <CardBody p={3}>
                 <HStack spacing={2}>
@@ -146,7 +148,7 @@ export function Dashboard() {
                 </HStack>
               </CardBody>
             </Card>
-            
+
             <Card size="sm" bg={bg} borderColor={borderColor}>
               <CardBody p={3}>
                 <HStack spacing={2}>
@@ -174,8 +176,8 @@ export function Dashboard() {
                   <Box fontSize="lg" fontWeight="bold" color="white">En línea</Box>
                 </VStack>
               </Circle>
-              
-              <SimpleGrid columns={3} spacing={8} mt={6}>
+
+              <SimpleGrid columns={{ base: 1, md: 3 }} spacing={8} mt={6} w="100%" maxW="500px"> {/* Ajuste de columnas y ancho */}
                 <VStack spacing={1}>
                   <Text fontSize="3xl" fontWeight="bold" color="blue.500">0</Text>
                   <Text fontSize="sm" color="gray.500">Chats</Text>
@@ -189,7 +191,7 @@ export function Dashboard() {
                   <Text fontSize="sm" color="gray.500">Usuarios</Text>
                 </VStack>
               </SimpleGrid>
-              
+
               <Text fontSize="sm" color="gray.400" mt={4}>
                 Última conexión: hace 2 horas
               </Text>
@@ -203,7 +205,7 @@ export function Dashboard() {
             <Heading size="md">Envío Rápido</Heading>
           </CardHeader>
           <CardBody>
-            <HStack spacing={4}>
+            <HStack spacing={4} flexWrap="wrap"> {/* Añadido flexWrap */}
               <Select placeholder="Seleccionar grupo" flex={1}>
                 <option value="grupo1">Grupo Principal</option>
                 <option value="grupo2">Grupo Secundario</option>
@@ -222,8 +224,8 @@ export function Dashboard() {
           <GridItem>
             <Card bg={bg} borderColor={borderColor}>
               <CardHeader>
-                <Flex justify="space-between" align="center">
-                  <HStack spacing={2}>
+                <Flex justify="space-between" align="center" flexWrap="wrap"> {/* Añadido flexWrap */}
+                  <HStack spacing={2} mb={{ base: 2, md: 0 }}>
                     <Icon as={FaChartBar} color="blue.500" />
                     <Heading size="md">Votaciones</Heading>
                   </HStack>
@@ -249,8 +251,8 @@ export function Dashboard() {
                               <Td>
                                 <VStack align="start" spacing={1}>
                                   <Text fontWeight="semibold" fontSize="sm">{votacion.titulo}</Text>
-                                  <Badge 
-                                    colorScheme={votacion.estado === 'activa' ? 'green' : 'gray'} 
+                                  <Badge
+                                    colorScheme={votacion.estado === 'activa' ? 'green' : 'gray'}
                                     size="sm"
                                   >
                                     {votacion.estado}
@@ -291,8 +293,8 @@ export function Dashboard() {
           <GridItem>
             <Card bg={bg} borderColor={borderColor}>
               <CardHeader>
-                <Flex justify="space-between" align="center">
-                  <HStack spacing={2}>
+                <Flex justify="space-between" align="center" flexWrap="wrap"> {/* Añadido flexWrap */}
+                  <HStack spacing={2} mb={{ base: 2, md: 0 }}>
                     <Icon as={FaComments} color="purple.500" />
                     <Heading size="md">Manhwas</Heading>
                   </HStack>
@@ -304,14 +306,14 @@ export function Dashboard() {
                   <VStack spacing={3} align="stretch">
                     {manhwas.slice(0, 4).map((manhwa) => (
                       <Box key={manhwa.id} p={3} bg={cardBg} borderRadius="md" border="1px" borderColor={borderColor}>
-                        <Flex justify="space-between" align="center">
-                          <VStack align="start" spacing={1} flex={1}>
+                        <Flex justify="space-between" align="center" flexWrap="wrap"> {/* Añadido flexWrap */}
+                          <VStack align="start" spacing={1} flex={1} mb={{ base: 2, sm: 0 }}>
                             <Text fontWeight="semibold" fontSize="sm">{manhwa.titulo}</Text>
                             <Text fontSize="xs" color="gray.500">
                               {manhwa.autor} • {manhwa.genero}
                             </Text>
-                            <Badge 
-                              colorScheme={manhwa.estado === 'Completado' ? 'blue' : 'orange'} 
+                            <Badge
+                              colorScheme={manhwa.estado === 'Completado' ? 'blue' : 'orange'}
                               size="sm"
                             >
                               {manhwa.estado}
@@ -337,8 +339,8 @@ export function Dashboard() {
         {/* Aportes */}
         <Card bg={bg} borderColor={borderColor}>
           <CardHeader>
-            <Flex justify="space-between" align="center">
-              <HStack spacing={2}>
+            <Flex justify="space-between" align="center" flexWrap="wrap"> {/* Añadido flexWrap */}
+              <HStack spacing={2} mb={{ base: 2, md: 0 }}>
                 <Icon as={FaUsers} color="orange.500" />
                 <Heading size="md">Aportes</Heading>
               </HStack>
@@ -350,8 +352,8 @@ export function Dashboard() {
               <VStack spacing={3} align="stretch">
                 {aportes.slice(0, 5).map((aporte) => (
                   <Box key={aporte.id} p={4} bg={cardBg} borderRadius="md" border="1px" borderColor={borderColor}>
-                    <Flex justify="space-between" align="center">
-                      <VStack align="start" spacing={1} flex={1}>
+                    <Flex justify="space-between" align="center" flexWrap="wrap"> {/* Añadido flexWrap */}
+                      <VStack align="start" spacing={1} flex={1} mb={{ base: 2, sm: 0 }}>
                         <Text fontWeight="semibold" noOfLines={2} fontSize="sm">
                           {aporte.contenido}
                         </Text>
@@ -362,7 +364,7 @@ export function Dashboard() {
                           </Text>
                         </HStack>
                       </VStack>
-                      <Button colorScheme="green" size="sm" ml={4}>
+                      <Button colorScheme="green" size="sm" ml={{ base: 0, sm: 4 }}> {/* Ajuste de ml */}
                         Enviar
                       </Button>
                     </Flex>
