@@ -1,7 +1,8 @@
-import axios from 'axios';
-
 const api = axios.create({
-  baseURL: '/api',
+  baseURL:
+    import.meta.env.MODE === 'development'
+      ? 'http://localhost:3001/api'
+      : 'https://whatsapp-bot-panel-render-1.onrender.com/api',
 });
 
 api.interceptors.request.use((config) => {
