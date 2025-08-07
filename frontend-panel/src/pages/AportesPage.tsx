@@ -6,7 +6,7 @@ import {
   Textarea, VStack, HStack, IconButton, useToast, Select, Text,
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
-import { aportesService } from '../services/api'; // Importa el servicio de aportes
+import { aportesService } from '../services/api'; // Cambia esto
 
 interface Aporte {
   id: number;
@@ -41,7 +41,7 @@ const AportesPage: React.FC = () => {
 
   const fetchAportes = async () => {
     try {
-      const response = await aportesService.getAportes(); // Usa aportesService
+      const response = await aportesService.getAportes(); // Cambia esto
       setAportes(response.data);
     } catch (error) {
       toast({
@@ -60,19 +60,12 @@ const AportesPage: React.FC = () => {
       setGrupos(response.data);
     } catch (error) {
       console.error('Error fetching grupos:', error);
-      toast({
-        title: 'Error',
-        description: 'No se pudieron cargar los grupos',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
     }
   };
 
   const handleSubmit = async () => {
     try {
-      await aportesService.subirAporte(formData); // Usa aportesService
+      await aportesService.subirAporte(formData); // Cambia esto
       toast({
         title: 'Éxito',
         description: 'Aporte creado correctamente',
@@ -96,7 +89,7 @@ const AportesPage: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este aporte?')) {
       try {
-        await aportesService.eliminarAporte(id); // Usa aportesService
+        await aportesService.eliminarAporte(id); // Cambia esto
         toast({
           title: 'Éxito',
           description: 'Aporte eliminado correctamente',
