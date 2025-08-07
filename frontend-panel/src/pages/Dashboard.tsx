@@ -28,7 +28,7 @@ import {
 } from '@chakra-ui/react';
 import { FaWhatsapp, FaUsers, FaComments, FaChartBar, FaPaperPlane, FaInbox } from 'react-icons/fa';
 import { useEffect, useState } from 'react';
-import api from '../services/api';
+;
 
 interface DashboardStats {
   usuarios: number;

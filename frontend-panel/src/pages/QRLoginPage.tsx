@@ -1,3 +1,4 @@
+import { whatsappService } from '../services/api'
 import { useState, useEffect } from 'react';
 import {
   Box,

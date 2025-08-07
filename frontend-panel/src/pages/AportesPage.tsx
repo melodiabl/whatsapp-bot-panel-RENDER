@@ -28,7 +28,7 @@ import {
   Text,
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
-import api from '../services/api';
+;
 
 interface Aporte {
   id: number;
