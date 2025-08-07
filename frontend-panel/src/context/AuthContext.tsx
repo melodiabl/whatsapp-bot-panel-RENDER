@@ -30,37 +30,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const token = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
-        
+
         if (token && storedUser) {
-          // Primero intentamos usar los datos almacenados
           try {
-            const userData = JSON.parse(storedUser);
+            const userData: User = JSON.parse(storedUser);
             setUser(userData);
             setIsAuthenticated(true);
-            
-            // Luego verificamos con el servidor en segundo plano
+
             try {
-              const currentUser = await authService.getCurrentUser();
+              const currentUser: User = await authService.getCurrentUser();
               setUser(currentUser);
-            } catch (serverError) {
-              // Si el servidor no responde pero tenemos datos válidos, continuamos
+            } catch (serverError: unknown) {
               console.warn('Server verification failed, using cached user data:', serverError);
             }
-          } catch (parseError) {
-            // Si no podemos parsear los datos, intentamos obtenerlos del servidor
-            const userData = await authService.getCurrentUser();
+          } catch (parseError: unknown) {
+            const userData: User = await authService.getCurrentUser();
             setUser(userData);
             setIsAuthenticated(true);
             localStorage.setItem('user', JSON.stringify(userData));
           }
         } else if (token) {
-          // Solo tenemos token, obtenemos datos del servidor
-          const userData = await authService.getCurrentUser();
+          const userData: User = await authService.getCurrentUser();
           setUser(userData);
           setIsAuthenticated(true);
           localStorage.setItem('user', JSON.stringify(userData));
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Auth initialization error:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -76,13 +71,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (username: string, password: string) => {
     try {
-      const response = await authService.login(username, password);
+      const response: { token: string; user: User } = await authService.login(username, password);
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
       setIsAuthenticated(true);
       setUser(response.user);
       navigate('/');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
       throw error;
     }
