@@ -1,11 +1,4 @@
 services:
-  - type: static
-    name: whatsapp-frontend
-    plan: free
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    rootDir: frontend-panel
-
   - type: web
     name: whatsapp-backend
     runtime: node
@@ -32,6 +25,3 @@ services:
 databases:
   - name: whatsapp-db
     plan: free
-
-
-
