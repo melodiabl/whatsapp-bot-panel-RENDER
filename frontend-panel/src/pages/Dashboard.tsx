@@ -1,7 +1,7 @@
-import { 
-  Box, 
-  Grid, 
-  GridItem, 
+import {
+  Box,
+  Grid,
+  GridItem,
   Text,
   VStack,
   HStack,
@@ -28,7 +28,8 @@ import {
 } from '@chakra-ui/react';
 import { FaWhatsapp, FaUsers, FaComments, FaChartBar, FaPaperPlane, FaInbox } from 'react-icons/fa';
 import { useEffect, useState } from 'react';
-;
+import { api } from '../services/api'; // ✅ IMPORT NECESARIO
+
 
 interface DashboardStats {
   usuarios: number;

@@ -1,34 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Button,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
-  FormControl,
-  FormLabel,
-  Textarea,
-  VStack,
-  HStack,
-  IconButton,
-  useToast,
-  Select,
-  Text,
+  Box, Button, Table, Thead, Tbody, Tr, Th, Td, Badge,
+  useDisclosure, Modal, ModalOverlay, ModalContent, ModalHeader,
+  ModalFooter, ModalBody, ModalCloseButton, FormControl, FormLabel,
+  Textarea, VStack, HStack, IconButton, useToast, Select, Text,
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
-;
+import api from '../services/api';
 
 interface Aporte {
   id: number;
@@ -95,7 +73,6 @@ const AportesPage: React.FC = () => {
         duration: 3000,
         isClosable: true,
       });
-
       fetchAportes();
       handleClose();
     } catch (error) {
@@ -134,11 +111,7 @@ const AportesPage: React.FC = () => {
   };
 
   const handleClose = () => {
-    setFormData({
-      contenido: '',
-      tipo: 'texto',
-      grupo: '',
-    });
+    setFormData({ contenido: '', tipo: 'texto', grupo: '' });
     onClose();
   };
 
@@ -238,12 +211,8 @@ const AportesPage: React.FC = () => {
           </ModalBody>
 
           <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={handleClose}>
-              Cancelar
-            </Button>
-            <Button colorScheme="purple" onClick={handleSubmit}>
-              Crear Aporte
-            </Button>
+            <Button variant="ghost" mr={3} onClick={handleClose}>Cancelar</Button>
+            <Button colorScheme="purple" onClick={handleSubmit}>Crear Aporte</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
@@ -252,3 +221,4 @@ const AportesPage: React.FC = () => {
 };
 
 export default AportesPage;
+

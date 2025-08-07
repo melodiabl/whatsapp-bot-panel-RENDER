@@ -1,4 +1,3 @@
-import { dashboardService } from '../services/api'
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -9,34 +8,145 @@ import {
   Spacer,
   useColorMode,
   useColorModeValue,
-  Table,
+  Table
 } from '@chakra-ui/react';
-
 import { SunIcon, MoonIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
 import { dashboardService } from '../services/api';
+
+interface Stats {
+  usuarios: number;
+  aportes: number;
+  pedidos: number;
+  grupos: number;
+}
+
+interface BotStatus {
+  status: string;
+  lastConnection: string;
+  uptime: string | null;
+  isConnected: boolean;
+  timestamp: string | null;
+}
+
+interface Votacion {
+  id: number;
+  titulo: string;
+  descripcion: string;
+  opciones: string;
+  estado: string;
+  fecha_inicio: string;
+  fecha_fin: string;
+}
+
+interface Manhwa {
+  id: number;
+  titulo: string;
+  autor: string;
+  genero: string;
+  estado: string;
+  descripcion: string;
+}
+
+interface Aporte {
+  id: number;
+  contenido: string;
+  tipo: string;
+  usuario: string;
+  fecha: string;
+}
 
 export const DashboardPage: React.FC = () => {
   const { colorMode, toggleColorMode } = useColorMode();
   const navigate = useNavigate();
 
-  // Colors based on light/dark mode
   const bg = useColorModeValue('gray.50', 'gray.800');
   const cardBg = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
 
-  // Navigation handlers
-  const handleNavigateToVotaciones = () => {
-    navigate('/votaciones');
-  };
+  const [stats, setStats] = useState<Stats>({
+    usuarios: 0,
+    aportes: 0,
+    pedidos: 0,
+    grupos: 0
+  });
 
-  const handleNavigateToManhwas = () => {
-    navigate('/manhwas');
-  };
+  const [botStatus, setBotStatus] = useState<BotStatus>({
+    status: 'disconnected',
+    lastConnection: 'Nunca conectado',
+    uptime: null,
+    isConnected: false,
+    timestamp: null
+  });
 
-  const handleNavigateToAportes = () => {
-    navigate('/aportes');
-  };
+  const [votaciones, setVotaciones] = useState<Votacion[]>([]);
+  const [manhwas, setManhwas] = useState<Manhwa[]>([]);
+  const [aportes, setAportes] = useState<Aporte[]>([]);
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const res = await dashboardService.getDashboardStats();
+        setStats(res.data);
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+      }
+    }
+
+    async function fetchBotStatus() {
+      try {
+        const res = await dashboardService.getBotStatus();
+        setBotStatus(res.data);
+      } catch (error) {
+        console.error('Error fetching bot status:', error);
+      }
+    }
+
+    fetchStats();
+    fetchBotStatus();
+    const interval = setInterval(fetchBotStatus, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [votacionesRes, manhwasRes, aportesRes] = await Promise.all([
+          fetch('http://localhost:3001/api/votaciones', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          }),
+          fetch('http://localhost:3001/api/manhwas', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          }),
+          fetch('http://localhost:3001/api/aportes', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+          })
+        ]);
+
+        if (votacionesRes.ok) setVotaciones(await votacionesRes.json());
+        if (manhwasRes.ok) setManhwas(await manhwasRes.json());
+        if (aportesRes.ok) setAportes(await aportesRes.json());
+
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  const handleNavigateToVotaciones = () => navigate('/votaciones');
+  const handleNavigateToManhwas = () => navigate('/manhwas');
+  const handleNavigateToAportes = () => navigate('/aportes');
+
+  return (
+    <Box p={6} bg={bg} minH="100vh">
+      {/* Aquí va el resto del JSX que ya tenés armado */}
+      {/* Estado del Bot, Votaciones, Manhwas y Aportes */}
+    </Box>
+  );
+};
+;
 
   const [stats, setStats] = useState({
     usuarios: 0,
