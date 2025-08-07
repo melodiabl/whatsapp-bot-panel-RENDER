@@ -1,32 +1,41 @@
-import React, { useEffect, useState } from 'react';
 import {
   Box,
+  Grid,
+  GridItem,
+  Text,
+  VStack,
+  HStack,
+  Badge,
+  Button,
+  useColorModeValue,
   Flex,
   Heading,
-  Text,
-  Button,
-  Spacer,
-  useColorMode,
-  useColorModeValue,
-  Table
+  Icon,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  TableContainer,
+  Progress,
+  Select,
+  Circle,
+  SimpleGrid,
+  Card,
+  CardBody,
+  CardHeader
 } from '@chakra-ui/react';
-import { SunIcon, MoonIcon } from '@chakra-ui/icons';
-import { useNavigate } from 'react-router-dom';
-import { dashboardService } from '../services/api';
+import { FaWhatsapp, FaUsers, FaComments, FaChartBar, FaPaperPlane, FaInbox } from 'react-icons/fa';
+import { useEffect, useState } from 'react';
+import { api } from '../services/api'; // ✅ IMPORT NECESARIO
 
-interface Stats {
+
+interface DashboardStats {
   usuarios: number;
   aportes: number;
   pedidos: number;
   grupos: number;
-}
-
-interface BotStatus {
-  status: string;
-  lastConnection: string;
-  uptime: string | null;
-  isConnected: boolean;
-  timestamp: string | null;
 }
 
 interface Votacion {
@@ -34,9 +43,19 @@ interface Votacion {
   titulo: string;
   descripcion: string;
   opciones: string;
-  estado: string;
   fecha_inicio: string;
   fecha_fin: string;
+  estado: string;
+  creador: string;
+}
+
+interface Aporte {
+  id: number;
+  contenido: string;
+  tipo: string;
+  usuario: string;
+  grupo: string;
+  fecha: string;
 }
 
 interface Manhwa {
@@ -46,307 +65,318 @@ interface Manhwa {
   genero: string;
   estado: string;
   descripcion: string;
+  url: string;
+  fecha_registro: string;
+  usuario_registro: string;
 }
 
-interface Aporte {
-  id: number;
-  contenido: string;
-  tipo: string;
-  usuario: string;
-  fecha: string;
-}
-
-export const DashboardPage: React.FC = () => {
-  const { colorMode, toggleColorMode } = useColorMode();
-  const navigate = useNavigate();
-
-  const bg = useColorModeValue('gray.50', 'gray.800');
-  const cardBg = useColorModeValue('white', 'gray.700');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-
-  const [stats, setStats] = useState<Stats>({
-    usuarios: 0,
-    aportes: 0,
-    pedidos: 0,
-    grupos: 0
-  });
-
-  const [botStatus, setBotStatus] = useState<BotStatus>({
-    status: 'disconnected',
-    lastConnection: 'Nunca conectado',
-    uptime: null,
-    isConnected: false,
-    timestamp: null
-  });
-
+export function Dashboard() {
+  const [stats, setStats] = useState<DashboardStats>({ usuarios: 0, aportes: 0, pedidos: 0, grupos: 0 });
   const [votaciones, setVotaciones] = useState<Votacion[]>([]);
-  const [manhwas, setManhwas] = useState<Manhwa[]>([]);
   const [aportes, setAportes] = useState<Aporte[]>([]);
+  const [manhwas, setManhwas] = useState<Manhwa[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const bg = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const cardBg = useColorModeValue('gray.50', 'gray.900');
 
   useEffect(() => {
-    async function fetchStats() {
+    const fetchData = async () => {
       try {
-        const res = await dashboardService.getDashboardStats();
-        setStats(res.data);
-      } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
-      }
-    }
-
-    async function fetchBotStatus() {
-      try {
-        const res = await dashboardService.getBotStatus();
-        setBotStatus(res.data);
-      } catch (error) {
-        console.error('Error fetching bot status:', error);
-      }
-    }
-
-    fetchStats();
-    fetchBotStatus();
-    const interval = setInterval(fetchBotStatus, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [votacionesRes, manhwasRes, aportesRes] = await Promise.all([
-          fetch('http://localhost:3001/api/votaciones', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-          }),
-          fetch('http://localhost:3001/api/manhwas', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-          }),
-          fetch('http://localhost:3001/api/aportes', {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-          })
+        const [statsRes, votacionesRes, aportesRes, manhwasRes] = await Promise.all([
+          api.get('/dashboard/stats'),
+          api.get('/votaciones'),
+          api.get('/aportes'),
+          api.get('/manhwas')
         ]);
 
-        if (votacionesRes.ok) setVotaciones(await votacionesRes.json());
-        if (manhwasRes.ok) setManhwas(await manhwasRes.json());
-        if (aportesRes.ok) setAportes(await aportesRes.json());
-
+        setStats(statsRes.data);
+        setVotaciones(votacionesRes.data);
+        setAportes(aportesRes.data);
+        setManhwas(manhwasRes.data);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
 
     fetchData();
   }, []);
 
-  const handleNavigateToVotaciones = () => navigate('/votaciones');
-  const handleNavigateToManhwas = () => navigate('/manhwas');
-  const handleNavigateToAportes = () => navigate('/aportes');
+  if (loading) {
+    return (
+      <Box p={6} bg={cardBg} minH="100vh">
+        <Text>Cargando...</Text>
+      </Box>
+    );
+  }
+
+  const parseOpciones = (opciones: string) => {
+    try {
+      return JSON.parse(opciones);
+    } catch {
+      return [];
+    }
+  };
 
   return (
-    <Box p={6} bg={bg} minH="100vh">
-      <Flex mb={6} alignItems="center">
-        <Heading size="lg" mr={4} display="flex" alignItems="center">
-          <Box as="span" mr={2} fontSize="2xl" role="img" aria-label="WhatsApp">
-            📱
-          </Box>
-          WhatsApp Bot Dashboard
-        </Heading>
-        <Spacer />
-        <Button onClick={toggleColorMode} leftIcon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}>
-          {colorMode === 'light' ? 'Modo Oscuro' : 'Modo Claro'}
-        </Button>
-      </Flex>
-
-      {/* Bot Status */}
-      <Box bg={cardBg} p={4} borderRadius="md" borderWidth="1px" borderColor={borderColor} mb={6}>
-        <Heading size="md" mb={4}>
-          Estado del Bot
-        </Heading>
-        <Flex justifyContent="space-between" flexWrap="wrap">
-          <Box minW="120px" mb={2}>
-            <Box 
-              fontWeight="bold" 
-              color={botStatus.isConnected ? "green.400" : "red.400"} 
-              display="flex" 
-              alignItems="center"
-            >
-              <Box
-                w={3}
-                h={3}
-                bg={botStatus.isConnected ? "green.400" : "red.400"}
-                borderRadius="full"
-                mr={2}
-                aria-label={botStatus.isConnected ? "En línea" : "Desconectado"}
-              />
-              {botStatus.isConnected ? "En línea" : "Desconectado"}
-            </Box>
-            <Text fontSize="sm" color="gray.500">
-              {botStatus.uptime && `Activo: ${botStatus.uptime}`}
-            </Text>
-          </Box>
-          <Box minW="120px" mb={2}>
-            <Text fontWeight="bold">Chats</Text>
-            <Text fontSize="2xl" fontWeight="bold">{stats.pedidos}</Text>
-          </Box>
-          <Box minW="120px" mb={2}>
-            <Text fontWeight="bold">Grupos</Text>
-            <Text fontSize="2xl" fontWeight="bold">{stats.grupos}</Text>
-          </Box>
-          <Box minW="120px" mb={2}>
-            <Text fontWeight="bold">Usuarios</Text>
-            <Text fontSize="2xl" fontWeight="bold">{stats.usuarios}</Text>
-          </Box>
+    <Box p={6} bg={cardBg} minH="100vh">
+      <VStack spacing={6} align="stretch">
+        {/* Header con iconos */}
+        <Flex justify="space-between" align="center" mb={6}>
+          <HStack spacing={3}>
+            <Icon as={FaWhatsapp} boxSize={8} color="green.500" />
+            <Heading size="lg" color="green.500">
+              WhatsApp Bot Dashboard
+            </Heading>
+          </HStack>
+          
+          {/* Tarjetas de mensajes en la esquina superior derecha */}
+          <HStack spacing={4}>
+            <Card size="sm" bg={bg} borderColor={borderColor}>
+              <CardBody p={3}>
+                <HStack spacing={2}>
+                  <Icon as={FaPaperPlane} color="blue.500" />
+                  <VStack spacing={0} align="start">
+                    <Text fontSize="xs" color="gray.500">Mensajes enviados</Text>
+                    <Text fontSize="lg" fontWeight="bold">1,247</Text>
+                  </VStack>
+                </HStack>
+              </CardBody>
+            </Card>
+            
+            <Card size="sm" bg={bg} borderColor={borderColor}>
+              <CardBody p={3}>
+                <HStack spacing={2}>
+                  <Icon as={FaInbox} color="green.500" />
+                  <VStack spacing={0} align="start">
+                    <Text fontSize="xs" color="gray.500">Mensajes recibidos</Text>
+                    <Text fontSize="lg" fontWeight="bold">2,891</Text>
+                  </VStack>
+                </HStack>
+              </CardBody>
+            </Card>
+          </HStack>
         </Flex>
-        <Text mt={2} fontSize="sm" color="gray.500">
-          Última conexión: {botStatus.lastConnection}
-        </Text>
-      </Box>
 
-      {/* Secciones: Votaciones, Manhwas, Aportes */}
-      <Flex flexWrap="wrap" gap={6}>
-        {/* Votaciones */}
-        <Box flex="1" minW="300px" bg={cardBg} p={4} borderRadius="md" borderWidth="1px" borderColor={borderColor}>
-          <Flex justifyContent="space-between" alignItems="center" mb={4}>
-            <Heading size="md">Votaciones</Heading>
-            <Button size="sm" colorScheme="green" onClick={handleNavigateToVotaciones}>
-              Nueva Votación
-            </Button>
-          </Flex>
-          {votaciones.length === 0 ? (
-            <Text>No hay votaciones activas.</Text>
-          ) : (
-            <Table variant="simple" size="sm">
-              <thead>
-                <tr>
-                  <th>Título</th>
-                  <th>Opciones</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {votaciones.map((votacion) => {
-                  let opciones = [];
-                  try {
-                    opciones = JSON.parse(votacion.opciones || '[]');
-                  } catch (e) {
-                    opciones = [];
-                  }
+        {/* Estado del Bot - Círculo grande verde */}
+        <Card bg={bg} borderColor={borderColor}>
+          <CardHeader>
+            <Heading size="md">Estado del Bot</Heading>
+          </CardHeader>
+          <CardBody>
+            <Flex justify="center" align="center" direction="column" py={6}>
+              <Circle size="120px" bg="green.500" color="white" mb={4}>
+                <VStack spacing={1}>
+                  <Icon as={FaWhatsapp} boxSize={8} />
+                  <Box fontSize="lg" fontWeight="bold" color="white">En línea</Box>
+                </VStack>
+              </Circle>
+              
+              <SimpleGrid columns={3} spacing={8} mt={6}>
+                <VStack spacing={1}>
+                  <Text fontSize="3xl" fontWeight="bold" color="blue.500">0</Text>
+                  <Text fontSize="sm" color="gray.500">Chats</Text>
+                </VStack>
+                <VStack spacing={1}>
+                  <Text fontSize="3xl" fontWeight="bold" color="purple.500">0</Text>
+                  <Text fontSize="sm" color="gray.500">Grupos</Text>
+                </VStack>
+                <VStack spacing={1}>
+                  <Text fontSize="3xl" fontWeight="bold" color="green.500">{stats.usuarios}</Text>
+                  <Text fontSize="sm" color="gray.500">Usuarios</Text>
+                </VStack>
+              </SimpleGrid>
+              
+              <Text fontSize="sm" color="gray.400" mt={4}>
+                Última conexión: hace 2 horas
+              </Text>
+            </Flex>
+          </CardBody>
+        </Card>
 
-                  return (
-                    <tr key={votacion.id}>
-                      <td>
-                        <Text fontWeight="bold">{votacion.titulo}</Text>
-                        <Text fontSize="sm" color="gray.500">{votacion.estado}</Text>
-                      </td>
-                      <td>
-                        <Box>
-                          {opciones.length > 0 ? (
-                            opciones.slice(0, 2).map((opcion: string, index: number) => (
-                              <Box key={index} mb={2}>
-                                <Flex alignItems="center" justifyContent="space-between" mb={1}>
-                                  <Text fontSize="sm">{opcion}</Text>
-                                  <Text fontSize="sm">0%</Text>
-                                </Flex>
-                                <Box bg="gray.200" h="2px" borderRadius="md">
-                                  <Box bg="green.400" h="2px" borderRadius="md" w="0%" />
-                                </Box>
-                              </Box>
-                            ))
-                          ) : (
-                            <Text fontSize="sm" color="gray.500">Sin opciones</Text>
-                          )}
-                          {opciones.length > 2 && (
-                            <Text fontSize="xs" color="gray.400">+{opciones.length - 2} más</Text>
-                          )}
-                        </Box>
-                      </td>
-                      <td>
-                        <Button size="sm" colorScheme="green">
-                          Ver
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </Table>
-          )}
-        </Box>
+        {/* Sección de Envío Rápido */}
+        <Card bg={bg} borderColor={borderColor}>
+          <CardHeader>
+            <Heading size="md">Envío Rápido</Heading>
+          </CardHeader>
+          <CardBody>
+            <HStack spacing={4}>
+              <Select placeholder="Seleccionar grupo" flex={1}>
+                <option value="grupo1">Grupo Principal</option>
+                <option value="grupo2">Grupo Secundario</option>
+                <option value="grupo3">Grupo de Pruebas</option>
+              </Select>
+              <Button colorScheme="green" leftIcon={<Icon as={FaPaperPlane} />}>
+                Aportar
+              </Button>
+            </HStack>
+          </CardBody>
+        </Card>
 
-        {/* Manhwas */}
-        <Box flex="1" minW="300px" bg={cardBg} p={4} borderRadius="md" borderWidth="1px" borderColor={borderColor}>
-          <Flex justifyContent="space-between" alignItems="center" mb={4}>
-            <Heading size="md">Manhwas</Heading>
-            <Button size="sm" colorScheme="green" onClick={handleNavigateToManhwas}>
-              Añadir Manhwa
-            </Button>
-          </Flex>
-          {manhwas.length === 0 ? (
-            <Text>No hay manhwas disponibles.</Text>
-          ) : (
-            <Table variant="simple" size="sm">
-              <thead>
-                <tr>
-                  <th>Descripción</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {manhwas.map((manhwa) => (
-                  <tr key={manhwa.id}>
-                    <td>
-                      <Text fontWeight="bold">{manhwa.titulo}</Text>
-                      <Text fontSize="sm" color="gray.500">{manhwa.autor} - {manhwa.estado}</Text>
-                    </td>
-                    <td>
-                      <Button size="sm" colorScheme="green">
-                        Ver
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          )}
-        </Box>
+        {/* Grid principal */}
+        <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={6}>
+          {/* Votaciones con tabla y barras de progreso */}
+          <GridItem>
+            <Card bg={bg} borderColor={borderColor}>
+              <CardHeader>
+                <Flex justify="space-between" align="center">
+                  <HStack spacing={2}>
+                    <Icon as={FaChartBar} color="blue.500" />
+                    <Heading size="md">Votaciones</Heading>
+                  </HStack>
+                  <Button colorScheme="green" size="sm">Nueva Votación</Button>
+                </Flex>
+              </CardHeader>
+              <CardBody>
+                {votaciones.length > 0 ? (
+                  <TableContainer>
+                    <Table size="sm">
+                      <Thead>
+                        <Tr>
+                          <Th>Título</Th>
+                          <Th>Opciones</Th>
+                          <Th>Progreso</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {votaciones.slice(0, 3).map((votacion) => {
+                          const opciones = parseOpciones(votacion.opciones);
+                          return (
+                            <Tr key={votacion.id}>
+                              <Td>
+                                <VStack align="start" spacing={1}>
+                                  <Text fontWeight="semibold" fontSize="sm">{votacion.titulo}</Text>
+                                  <Badge 
+                                    colorScheme={votacion.estado === 'activa' ? 'green' : 'gray'} 
+                                    size="sm"
+                                  >
+                                    {votacion.estado}
+                                  </Badge>
+                                </VStack>
+                              </Td>
+                              <Td>
+                                <VStack align="start" spacing={1}>
+                                  {opciones.slice(0, 2).map((opcion: string, index: number) => (
+                                    <Text key={index} fontSize="xs" color="gray.600">
+                                      {opcion}
+                                    </Text>
+                                  ))}
+                                </VStack>
+                              </Td>
+                              <Td>
+                                <VStack align="start" spacing={2}>
+                                  <Progress value={65} size="sm" colorScheme="green" w="100%" />
+                                  <Text fontSize="xs" color="gray.500">65%</Text>
+                                </VStack>
+                              </Td>
+                            </Tr>
+                          );
+                        })}
+                      </Tbody>
+                    </Table>
+                  </TableContainer>
+                ) : (
+                  <Text color="gray.500" textAlign="center" py={8}>
+                    No hay votaciones activas.
+                  </Text>
+                )}
+              </CardBody>
+            </Card>
+          </GridItem>
+
+          {/* Manhwas */}
+          <GridItem>
+            <Card bg={bg} borderColor={borderColor}>
+              <CardHeader>
+                <Flex justify="space-between" align="center">
+                  <HStack spacing={2}>
+                    <Icon as={FaComments} color="purple.500" />
+                    <Heading size="md">Manhwas</Heading>
+                  </HStack>
+                  <Button colorScheme="green" size="sm">Añadir Manhwa</Button>
+                </Flex>
+              </CardHeader>
+              <CardBody>
+                {manhwas.length > 0 ? (
+                  <VStack spacing={3} align="stretch">
+                    {manhwas.slice(0, 4).map((manhwa) => (
+                      <Box key={manhwa.id} p={3} bg={cardBg} borderRadius="md" border="1px" borderColor={borderColor}>
+                        <Flex justify="space-between" align="center">
+                          <VStack align="start" spacing={1} flex={1}>
+                            <Text fontWeight="semibold" fontSize="sm">{manhwa.titulo}</Text>
+                            <Text fontSize="xs" color="gray.500">
+                              {manhwa.autor} • {manhwa.genero}
+                            </Text>
+                            <Badge 
+                              colorScheme={manhwa.estado === 'Completado' ? 'blue' : 'orange'} 
+                              size="sm"
+                            >
+                              {manhwa.estado}
+                            </Badge>
+                          </VStack>
+                          <Button colorScheme="green" size="sm">
+                            Enviar
+                          </Button>
+                        </Flex>
+                      </Box>
+                    ))}
+                  </VStack>
+                ) : (
+                  <Text color="gray.500" textAlign="center" py={8}>
+                    No hay manhwas disponibles.
+                  </Text>
+                )}
+              </CardBody>
+            </Card>
+          </GridItem>
+        </Grid>
 
         {/* Aportes */}
-        <Box flex="1" minW="300px" bg={cardBg} p={4} borderRadius="md" borderWidth="1px" borderColor={borderColor}>
-          <Flex justifyContent="space-between" alignItems="center" mb={4}>
-            <Heading size="md">Aportes</Heading>
-            <Button size="sm" colorScheme="green" onClick={handleNavigateToAportes}>
-              Añadir Aporte
-            </Button>
-          </Flex>
-          {aportes.length === 0 ? (
-            <Text>No hay aportes disponibles.</Text>
-          ) : (
-            <Table variant="simple" size="sm">
-              <thead>
-                <tr>
-                  <th>Descripción</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {aportes.map((aporte) => (
-                  <tr key={aporte.id}>
-                    <td>
-                      <Text fontWeight="bold">{aporte.tipo}</Text>
-                      <Text fontSize="sm" color="gray.500">{aporte.contenido.substring(0, 50)}...</Text>
-                    </td>
-                    <td>
-                      <Button size="sm" colorScheme="green">
-                        Ver
+        <Card bg={bg} borderColor={borderColor}>
+          <CardHeader>
+            <Flex justify="space-between" align="center">
+              <HStack spacing={2}>
+                <Icon as={FaUsers} color="orange.500" />
+                <Heading size="md">Aportes</Heading>
+              </HStack>
+              <Button colorScheme="green" size="sm">Añadir Aporte</Button>
+            </Flex>
+          </CardHeader>
+          <CardBody>
+            {aportes.length > 0 ? (
+              <VStack spacing={3} align="stretch">
+                {aportes.slice(0, 5).map((aporte) => (
+                  <Box key={aporte.id} p={4} bg={cardBg} borderRadius="md" border="1px" borderColor={borderColor}>
+                    <Flex justify="space-between" align="center">
+                      <VStack align="start" spacing={1} flex={1}>
+                        <Text fontWeight="semibold" noOfLines={2} fontSize="sm">
+                          {aporte.contenido}
+                        </Text>
+                        <HStack spacing={2}>
+                          <Badge colorScheme="blue" size="sm">{aporte.tipo}</Badge>
+                          <Text fontSize="xs" color="gray.500">
+                            por {aporte.usuario}
+                          </Text>
+                        </HStack>
+                      </VStack>
+                      <Button colorScheme="green" size="sm" ml={4}>
+                        Enviar
                       </Button>
-                    </td>
-                  </tr>
+                    </Flex>
+                  </Box>
                 ))}
-              </tbody>
-            </Table>
-          )}
-        </Box>
-      </Flex>
+              </VStack>
+            ) : (
+              <Text color="gray.500" textAlign="center" py={8}>
+                No hay aportes disponibles.
+              </Text>
+            )}
+          </CardBody>
+        </Card>
+      </VStack>
     </Box>
   );
-};
-
-
-
+}
