@@ -15,7 +15,13 @@ export default {
       directory: join(__dirname, 'migrations'),
       loadExtensions: ['.js', '.cjs']
     },
-    useNullAsDefault: true
+    useNullAsDefault: true,
+    pool: {
+      min: 1,
+      max: 5,
+      acquireTimeoutMillis: 60000,
+      idleTimeoutMillis: 30000
+    }
   },
   production: {
     client: 'pg',
@@ -27,6 +33,16 @@ export default {
     ssl: {
       require: true,
       rejectUnauthorized: false
+    },
+    pool: {
+      min: parseInt(process.env.DB_POOL_MIN) || 2,
+      max: parseInt(process.env.DB_POOL_MAX) || 10,
+      acquireTimeoutMillis: parseInt(process.env.DB_ACQUIRE_TIMEOUT) || 60000,
+      idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT) || 30000,
+      createTimeoutMillis: 30000,
+      destroyTimeoutMillis: 5000,
+      reapIntervalMillis: 1000,
+      createRetryIntervalMillis: 200,
     }
   }
 };

@@ -4,7 +4,7 @@ import bodyParser from 'body-parser';
 import { connectToWhatsApp, getAvailableGroups } from './whatsapp.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import db from './db.js';
+import db, { checkConnection, closeConnection, getPoolStatus } from './db.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -118,13 +118,28 @@ app.get('/api/whatsapp/groups', async (req, res) => {
 });
 
 // Health check endpoint for Railway
-app.get('/api/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development'
-  });
+app.get('/api/health', async (req, res) => {
+  try {
+    const dbConnected = await checkConnection();
+    const poolStatus = getPoolStatus();
+    
+    res.status(200).json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
+      database: {
+        connected: dbConnected,
+        pool: poolStatus
+      }
+    });
+  } catch (error) {
+    res.status(503).json({ 
+      status: 'error',
+      error: error.message,
+      database: { connected: false }
+    });
+  }
 });
 
 // Catch-all handler: send back React's index.html file in production
@@ -137,10 +152,51 @@ if (process.env.NODE_ENV === 'production') {
 
 // Start the bot connection and server
 async function start() {
+  // Check database connection before starting
+  const dbConnected = await checkConnection();
+  if (!dbConnected) {
+    console.error('Failed to connect to database. Exiting...');
+    process.exit(1);
+  }
+  
   await connectToWhatsApp(join(__dirname, 'storage', 'baileys_full'));
-  app.listen(port, '0.0.0.0', () => {
+  const server = app.listen(port, '0.0.0.0', () => {
     console.log(`Backend server listening on port ${port}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+
+  // Graceful shutdown handlers
+  const gracefulShutdown = async (signal) => {
+    console.log(`Received ${signal}. Starting graceful shutdown...`);
+    
+    server.close(async () => {
+      console.log('HTTP server closed');
+      
+      try {
+        await closeConnection();
+        console.log('Database connections closed');
+        process.exit(0);
+      } catch (error) {
+        console.error('Error during shutdown:', error);
+        process.exit(1);
+      }
+    });
+  };
+
+  // Handle shutdown signals
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+  
+  // Handle uncaught exceptions
+  process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    gracefulShutdown('uncaughtException');
+  });
+  
+  // Handle unhandled promise rejections
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    gracefulShutdown('unhandledRejection');
   });
 }
 
