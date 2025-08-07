@@ -1,15 +1,21 @@
 services:
+  - type: static
+    name: whatsapp-frontend
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    rootDir: frontend-panel
+
   - type: web
-    name: whatsapp-bot-panel
+    name: whatsapp-backend
     runtime: node
     plan: free
-    buildCommand: "npm install && cd frontend-panel && npm install && npm run build"
-    startCommand: "cd backend/full && node index.js"
+    buildCommand: npm install
+    startCommand: node index.js
+    rootDir: backend/full
     envVars:
       - key: NODE_ENV
         value: production
-      - key: NODE_VERSION
-        value: "18"
       - key: PORT
         value: 10000
       - key: JWT_SECRET
@@ -18,7 +24,14 @@ services:
         value: admin123
       - key: BOT_NAME
         value: "Melodia WhatsApp Bot"
-      - key: DATABASE_PATH
-        value: "/tmp/database.sqlite"
-      - key: FRONTEND_URL
-        value: "https://${RENDER_SERVICE_NAME}.onrender.com"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: whatsapp-db
+          property: connectionString
+
+databases:
+  - name: whatsapp-db
+    plan: free
+
+
+
