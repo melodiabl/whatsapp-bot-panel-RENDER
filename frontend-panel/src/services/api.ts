@@ -8,7 +8,7 @@ export const api = axios.create({
 export const authService = {
   login: (data: { username: string; password: string }) => api.post('/auth/login', data),
   verificarToken: () => api.get('/auth/verificar-token'),
-  getCurrent:User  () => api.get('/auth/current-user'), // Asegúrate de que esta línea esté presente
+  getCurrent:User  () => api.get('/auth/current-user'), // Asegúrate de que esta función esté definida
 };
 
 // ===================== DASHBOARD =====================
