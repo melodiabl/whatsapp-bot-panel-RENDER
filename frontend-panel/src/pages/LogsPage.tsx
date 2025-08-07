@@ -17,7 +17,8 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { RepeatIcon } from '@chakra-ui/icons';
-;
+import { api } from '../services/api';
+
 
 interface Log {
   id: number;

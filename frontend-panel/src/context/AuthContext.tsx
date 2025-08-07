@@ -21,7 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser ] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -29,38 +29,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initAuth = async () => {
       try {
         const token = localStorage.getItem('token');
-        const storedUser = localStorage.getItem('user');
+        const storedUser  = localStorage.getItem('user');
 
-        if (token && storedUser) {
+        if (token && storedUser ) {
+          const userData: User = JSON.parse(storedUser );
+          setUser (userData);
+          setIsAuthenticated(true);
+
           try {
-            const userData: User = JSON.parse(storedUser);
-            setUser(userData);
-            setIsAuthenticated(true);
-
-            try {
-              const currentUser: User = await authService.getCurrentUser();
-              setUser(currentUser);
-            } catch (serverError: unknown) {
-              console.warn('Server verification failed, using cached user data:', serverError);
-            }
-          } catch (parseError: unknown) {
-            const userData: User = await authService.getCurrentUser();
-            setUser(userData);
-            setIsAuthenticated(true);
-            localStorage.setItem('user', JSON.stringify(userData));
+            const current:User  User = await authService.getCurrentUser ();
+            setUser (currentUser );
+          } catch (serverError) {
+            console.warn('Server verification failed, using cached user data:', serverError);
           }
         } else if (token) {
-          const userData: User = await authService.getCurrentUser();
-          setUser(userData);
+          const userData: User = await authService.getCurrentUser ();
+          setUser (userData);
           setIsAuthenticated(true);
           localStorage.setItem('user', JSON.stringify(userData));
         }
-      } catch (error: unknown) {
+      } catch (error) {
         console.error('Auth initialization error:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setIsAuthenticated(false);
-        setUser(null);
+        setUser (null);
       } finally {
         setLoading(false);
       }
@@ -75,11 +68,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
       setIsAuthenticated(true);
-      setUser(response.user);
+      setUser (response.user);
       navigate('/');
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Login error:', error);
-      throw error;
+      throw error; // Consider providing user feedback here
     }
   };
 
@@ -87,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setIsAuthenticated(false);
-    setUser(null);
+    setUser (null);
     navigate('/login');
   };
 
