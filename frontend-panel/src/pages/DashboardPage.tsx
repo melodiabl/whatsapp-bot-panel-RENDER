@@ -141,131 +141,6 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <Box p={6} bg={bg} minH="100vh">
-      {/* Aquí va el resto del JSX que ya tenés armado */}
-      {/* Estado del Bot, Votaciones, Manhwas y Aportes */}
-    </Box>
-  );
-};
-;
-
-  const [stats, setStats] = useState({
-    usuarios: 0,
-    aportes: 0,
-    pedidos: 0,
-    grupos: 0,
-  });
-
-  const [botStatus, setBotStatus] = useState({
-    status: 'disconnected',
-    lastConnection: 'Nunca conectado',
-    uptime: null,
-    isConnected: false,
-    timestamp: null
-  });
-
-  interface Votacion {
-    id: number;
-    titulo: string;
-    descripcion: string;
-    opciones: string;
-    estado: string;
-    fecha_inicio: string;
-    fecha_fin: string;
-  }
-
-  interface Manhwa {
-    id: number;
-    titulo: string;
-    autor: string;
-    genero: string;
-    estado: string;
-    descripcion: string;
-  }
-
-  interface Aporte {
-    id: number;
-    contenido: string;
-    tipo: string;
-    usuario: string;
-    fecha: string;
-  }
-
-  const [votaciones, setVotaciones] = useState<Votacion[]>([]);
-  const [manhwas, setManhwas] = useState<Manhwa[]>([]);
-  const [aportes, setAportes] = useState<Aporte[]>([]);
-
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        const data = await dashboardService.getDashboardStats();
-        setStats(data);
-      } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
-      }
-    }
-    
-    async function fetchBotStatus() {
-      try {
-        const status = await dashboardService.getBotStatus();
-        setBotStatus(status);
-      } catch (error) {
-        console.error('Error fetching bot status:', error);
-      }
-    }
-    
-    fetchStats();
-    fetchBotStatus();
-    
-    // Actualizar el estado del bot cada 30 segundos
-    const interval = setInterval(fetchBotStatus, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  // Fetch real data from API
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        // Fetch real data from API endpoints
-        const votacionesResponse = await fetch('http://localhost:3001/api/votaciones', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        const manhwasResponse = await fetch('http://localhost:3001/api/manhwas', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-        const aportesResponse = await fetch('http://localhost:3001/api/aportes', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-
-        if (votacionesResponse.ok) {
-          const votacionesData = await votacionesResponse.json();
-          setVotaciones(votacionesData.slice(0, 3)); // Show only first 3
-        }
-        
-        if (manhwasResponse.ok) {
-          const manhwasData = await manhwasResponse.json();
-          setManhwas(manhwasData.slice(0, 3)); // Show only first 3
-        }
-        
-        if (aportesResponse.ok) {
-          const aportesData = await aportesResponse.json();
-          setAportes(aportesData.slice(0, 3)); // Show only first 3
-        }
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      }
-    }
-    fetchData();
-  }, []);
-
-  return (
-    <Box p={6} bg={bg} minH="100vh">
       <Flex mb={6} alignItems="center">
         <Heading size="lg" mr={4} display="flex" alignItems="center">
           <Box as="span" mr={2} fontSize="2xl" role="img" aria-label="WhatsApp">
@@ -324,8 +199,9 @@ export const DashboardPage: React.FC = () => {
         </Text>
       </Box>
 
-      {/* Placeholder for Votaciones, Manhwas, Aportes sections */}
+      {/* Secciones: Votaciones, Manhwas, Aportes */}
       <Flex flexWrap="wrap" gap={6}>
+        {/* Votaciones */}
         <Box flex="1" minW="300px" bg={cardBg} p={4} borderRadius="md" borderWidth="1px" borderColor={borderColor}>
           <Flex justifyContent="space-between" alignItems="center" mb={4}>
             <Heading size="md">Votaciones</Heading>
@@ -345,14 +221,14 @@ export const DashboardPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {votaciones.map((votacion: any) => {
+                {votaciones.map((votacion) => {
                   let opciones = [];
                   try {
                     opciones = JSON.parse(votacion.opciones || '[]');
                   } catch (e) {
                     opciones = [];
                   }
-                  
+
                   return (
                     <tr key={votacion.id}>
                       <td>
@@ -394,6 +270,7 @@ export const DashboardPage: React.FC = () => {
           )}
         </Box>
 
+        {/* Manhwas */}
         <Box flex="1" minW="300px" bg={cardBg} p={4} borderRadius="md" borderWidth="1px" borderColor={borderColor}>
           <Flex justifyContent="space-between" alignItems="center" mb={4}>
             <Heading size="md">Manhwas</Heading>
@@ -430,6 +307,7 @@ export const DashboardPage: React.FC = () => {
           )}
         </Box>
 
+        {/* Aportes */}
         <Box flex="1" minW="300px" bg={cardBg} p={4} borderRadius="md" borderWidth="1px" borderColor={borderColor}>
           <Flex justifyContent="space-between" alignItems="center" mb={4}>
             <Heading size="md">Aportes</Heading>
@@ -469,4 +347,6 @@ export const DashboardPage: React.FC = () => {
     </Box>
   );
 };
+
+
 
